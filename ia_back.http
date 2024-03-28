@@ -1,0 +1,6 @@
+@ia_back_HostAddress = http://localhost:5078
+
+GET {{ia_back_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
