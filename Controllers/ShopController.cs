@@ -22,20 +22,29 @@ namespace WebAPI1.Controllers
         }
         [HttpGet]
         [Route("dbTest")]
-        public string dbTest()
+        public List<String> dbTest()
         {
             string connectionString = "Server=tcp:iaserver.database.windows.net,1433;Initial Catalog=IA;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=\"Active Directory Default\";";
-            string result = "test";
 
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            // Table would be created ahead of time in production
+            var rows = new List<string>();
+
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+
+            var command = new SqlCommand("SELECT * FROM Users", conn);
+            using SqlDataReader reader = command.ExecuteReader();
+
+            if (reader.HasRows)
             {
-                connection.Open();
-                result = "Connection Opened";
-                connection.Close();
+                while (reader.Read())
+                {
+                    rows.Add($"{reader.GetInt32(0)}, {reader.GetString(1)}, {reader.GetString(2)}");
+                }
             }
+
+            return rows;
             
-            return result;
         }   
     }
 }
-
