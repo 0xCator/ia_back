@@ -1,4 +1,5 @@
 using ia_back.Data;
+using ia_back.Data.Custom_Repositories;
 using ia_back.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,7 +16,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<IDataRepository<User>, DataRepository<User>>();
+builder.Services.AddScoped<IDataRepository<User>, UserRepository>();
 builder.Services.AddScoped<IDataRepository<Project>, DataRepository<Project>>();
 builder.Services.AddScoped<IDataRepository<ProjectTask>, DataRepository<ProjectTask>>();
 builder.Services.AddScoped<IDataRepository<Comment>, DataRepository<Comment>>();
