@@ -3,6 +3,7 @@ using ia_back.Models;
 using ia_back.DTOs.Login;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using ia_back.Controllers;
 
 namespace ia_back.Controllers
 {
@@ -11,10 +12,12 @@ namespace ia_back.Controllers
     public class UserController : Controller
     {
         private readonly IDataRepository<User> _userRepository;
+        private readonly ProjectRequestContorller _projectRequestContorller;
 
-        public UserController(IDataRepository<User> userRepository)
+        public UserController(IDataRepository<User> userRepository, ProjectRequestContorller projectRequestContorller)
         {
             _userRepository = userRepository;
+            _projectRequestContorller = projectRequestContorller;
         }
 
         [HttpPost("login")]
@@ -63,6 +66,26 @@ namespace ia_back.Controllers
             await _userRepository.Save();
 
             return Ok(registeringUser);
+        }
+
+        [HttpPost("acceptRequest/{RequestId}")]
+        public async Task<IActionResult> AcceptRequest(int RequestId)
+        {
+            if (!await _projectRequestContorller.AcceptProjectRequest(RequestId))
+            {
+                return NotFound("Request doesn't exist");
+            }
+            return Ok();
+        }
+
+        [HttpPost("rejectRequest/{RequestId}")]
+        public async Task<IActionResult> RejectRequest(int RequestId)
+        {
+            if (!await _projectRequestContorller.DeleteProjectRequest(RequestId))
+            {
+                return NotFound("Request doesn't exist");
+            }
+            return Ok();
         }
     }
 }

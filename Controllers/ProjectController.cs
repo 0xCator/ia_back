@@ -3,6 +3,8 @@ using ia_back.Data;
 using ia_back.Models;
 using Microsoft.AspNetCore.Mvc;
 using ia_back.DTOs.ProjectDTO;
+using ia_back.DTOs.ReqestDTO;
+
 
 namespace ia_back.Controllers
 {
@@ -12,11 +14,13 @@ namespace ia_back.Controllers
     {
         private readonly IDataRepository<Project> _projectRepository;
         private readonly IDataRepository<User> _userRepository;
+        private readonly ProjectRequestContorller _projectRequestContorller;
 
-        public ProjectController(IDataRepository<Project> projectRepository, IDataRepository<User> userRepository)
+        public ProjectController(IDataRepository<Project> projectRepository, IDataRepository<User> userRepository, ProjectRequestContorller projectRequestContorller)
         {
             _projectRepository = projectRepository;
             _userRepository = userRepository;
+            _projectRequestContorller = projectRequestContorller;
         }
 
         [HttpPut]
@@ -56,7 +60,14 @@ namespace ia_back.Controllers
                 {
                     return NotFound("Developer doesn't exist");
                 }
-                project.RequestedDevelopers.Add(developer);
+                if(! await _projectRequestContorller.CreateProjectRequest(new ReqestEntryDTO
+                {
+                    ProjectId = project.Id,
+                    UserId = developer.Id
+                }))
+                {
+                    return NotFound("Request failed");
+                }
             }
 
             await _projectRepository.AddAsync(project);
@@ -120,15 +131,9 @@ namespace ia_back.Controllers
             return Ok(projects);
         }
 
-        [HttpPost("id/developerName")]
+        [HttpPost("projId/sendRequest/developerName")]
         public async Task<IActionResult> AssigneDeveloperToProject(int id, string developerName)
         {
-            var project = await _projectRepository.GetByIdAsync(id);
-            if (project == null)
-            {
-                return NotFound();
-            }
-
             var userRepository = _userRepository as UserRepository;
             if (userRepository == null)
             {
@@ -140,11 +145,16 @@ namespace ia_back.Controllers
                 return NotFound("Developer doesn't exist");
             }
 
-            project.RequestedDevelopers.Add(developer);
-            await _projectRepository.UpdateAsync(project);
-            await _projectRepository.Save();
+            if(await _projectRequestContorller.CreateProjectRequest(new ReqestEntryDTO
+            {
+                ProjectId = id,
+                UserId = developer.Id 
+            })){
 
-            return Ok();
+                return Ok();
+            }
+            
+            return NotFound("Request failed"); 
         }
 
         [HttpDelete("id/developerName")]
@@ -185,68 +195,6 @@ namespace ia_back.Controllers
             return Ok();
         }
 
-        [HttpPost("id/accept/developerName")]
-        public async Task<IActionResult> AcceptProjectRequest(int id, string developerName)
-        {
-            var project = await _projectRepository.GetByIdAsync(id);
-            if (project == null)
-            {
-                return NotFound();
-            }
-            var userRepository = _userRepository as UserRepository;
-            if (userRepository == null)
-            {
-                return NotFound("User repository is null");
-            }
-            var developer = await userRepository.GetByUsernameAsync(developerName);
-            if (developer == null)
-            {
-                return NotFound("Developer doesn't exist");
-            }
-
-            if (!project.RequestedDevelopers.Contains(developer))
-            {
-                return NotFound("Developer is not in the requested developers list");
-            }
-
-            project.RequestedDevelopers.Remove(developer);
-            project.AssignedDevelopers.Add(developer);
-            await _projectRepository.UpdateAsync(project);
-            await _projectRepository.Save();
-
-            return Ok();
-        }
-
-        [HttpPost("id/reject/developerName")]
-        public async Task<IActionResult> RejectProjectRequest(int id, string developerName)
-        {
-            var project = await _projectRepository.GetByIdAsync(id);
-            if (project == null)
-            {
-                return NotFound();
-            }
-            var userRepository = _userRepository as UserRepository;
-            if (userRepository == null)
-            {
-                return NotFound("User repository is null");
-            }
-            var developer = await userRepository.GetByUsernameAsync(developerName);
-            if (developer == null)
-            {
-                return NotFound("Developer doesn't exist");
-            }
-
-            if (!project.RequestedDevelopers.Contains(developer))
-            {
-                return NotFound("Developer is not in the requested developers list");
-            }
-
-            project.RequestedDevelopers.Remove(developer);
-            await _projectRepository.UpdateAsync(project);
-            await _projectRepository.Save();
-
-            return Ok();
-        }
 
     }
 }
