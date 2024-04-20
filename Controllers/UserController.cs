@@ -3,7 +3,7 @@ using ia_back.Models;
 using ia_back.DTOs.Login;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using ia_back.Controllers;
+using BCrypt.Net;
 
 namespace ia_back.Controllers
 {
@@ -28,9 +28,10 @@ namespace ia_back.Controllers
                 return BadRequest();
             }
 
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(login.Password);
             var users = await _userRepository.GetAllAsync();
             var user = users.FirstOrDefault(u => u.Username.ToLower() == login.Username.ToLower() && 
-                                            u.Password == login.Password);
+                                            u.Password == hashedPassword);
             if (user == null)
             {
                 return NotFound("User doesn't exist");
@@ -54,12 +55,14 @@ namespace ia_back.Controllers
                 return BadRequest("User already exists");
             }
 
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(register.Password);
+
             User registeringUser = new User
             {
                 Name = register.Name,
                 Email = register.Email,
                 Username = register.Username,
-                Password = register.Password
+                Password = hashedPassword, 
             };
 
             await _userRepository.AddAsync(registeringUser);
