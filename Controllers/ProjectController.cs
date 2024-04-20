@@ -80,7 +80,7 @@ namespace ia_back.Controllers
             return Ok();
         }
 
-        [HttpPatch("id")]
+        [HttpPatch("id/newName")]
         public async Task<IActionResult> UpdateProjectName(int id, string newName)
         {
             var project = await _projectRepository.GetByIdAsync(id);
@@ -120,7 +120,7 @@ namespace ia_back.Controllers
             return Ok(projects);
         }
 
-        [HttpPost("id")]
+        [HttpPost("id/developerName")]
         public async Task<IActionResult> AssigneDeveloperToProject(int id, string developerName)
         {
             var project = await _projectRepository.GetByIdAsync(id);
@@ -147,7 +147,7 @@ namespace ia_back.Controllers
             return Ok();
         }
 
-        [HttpDelete("id")]
+        [HttpDelete("id/developerName")]
         public async Task<IActionResult> RemoveDeveloperFromProject(int id, string developerName)
         {
             var project = await _projectRepository.GetByIdAsync(id);
@@ -185,7 +185,7 @@ namespace ia_back.Controllers
             return Ok();
         }
 
-        [HttpPost("id")]
+        [HttpPost("id/accept/developerName")]
         public async Task<IActionResult> AcceptProjectRequest(int id, string developerName)
         {
             var project = await _projectRepository.GetByIdAsync(id);
@@ -217,7 +217,7 @@ namespace ia_back.Controllers
             return Ok();
         }
 
-        [HttpPost("id")]
+        [HttpPost("id/reject/developerName")]
         public async Task<IActionResult> RejectProjectRequest(int id, string developerName)
         {
             var project = await _projectRepository.GetByIdAsync(id);
