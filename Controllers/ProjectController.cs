@@ -3,8 +3,6 @@ using ia_back.Data;
 using ia_back.Models;
 using Microsoft.AspNetCore.Mvc;
 using ia_back.DTOs.ProjectDTO;
-using ia_back.DTOs.ReqestDTO;
-
 
 namespace ia_back.Controllers
 {
@@ -14,13 +12,11 @@ namespace ia_back.Controllers
     {
         private readonly IDataRepository<Project> _projectRepository;
         private readonly IDataRepository<User> _userRepository;
-        private readonly ProjectRequestContorller _projectRequestContorller;
 
-        public ProjectController(IDataRepository<Project> projectRepository, IDataRepository<User> userRepository, ProjectRequestContorller projectRequestContorller)
+        public ProjectController(IDataRepository<Project> projectRepository, IDataRepository<User> userRepository)
         {
             _projectRepository = projectRepository;
             _userRepository = userRepository;
-            _projectRequestContorller = projectRequestContorller;
         }
 
         [HttpPut]
@@ -60,14 +56,7 @@ namespace ia_back.Controllers
                 {
                     return NotFound("Developer doesn't exist");
                 }
-                if(await _projectRequestContorller.CreateProjectRequest(new ReqestEntryDTO
-                {
-                    ProjectId = project.Id,
-                    UserId = developer.Id
-                }) == null)
-                {
-                    return NotFound("Request failed");
-                }
+                project.RequestedDevelopers.Add(developer);
             }
 
             await _projectRepository.AddAsync(project);
@@ -132,8 +121,13 @@ namespace ia_back.Controllers
         }
 
         [HttpPost("projId/sendRequest/developerName")]
-        public async Task<IActionResult> AssigneDeveloperToProject(int id, string developerName)
+        public async Task<IActionResult> AssignDeveloperToProject(int id, string developerName)
         {
+            var project = await _projectRepository.GetByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound();
+            }
             var userRepository = _userRepository as UserRepository;
             if (userRepository == null)
             {
@@ -145,14 +139,10 @@ namespace ia_back.Controllers
                 return NotFound("Developer doesn't exist");
             }
 
-            if(await _projectRequestContorller.CreateProjectRequest(new ReqestEntryDTO
-            {
-                ProjectId = id,
-                UserId = developer.Id 
-            }) == null){
+            project.RequestedDevelopers.Add(developer);
 
-                return NotFound("Request failed"); 
-            }
+            await _projectRepository.UpdateAsync(project);
+            await _projectRepository.Save();
 
             return Ok();
             

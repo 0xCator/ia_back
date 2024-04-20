@@ -16,7 +16,11 @@ namespace ia_back.Data.Custom_Repositories
 
         public async Task<IEnumerable<Project>> GetAllAsync()
         {
-            return await table.Include(p => p.TeamLeader).ToListAsync();
+            return await table
+                .Include(p => p.TeamLeader)
+                .Include(p => p.RequestedDevelopers)
+                .Include(p => p.AssignedDevelopers)
+                .ToListAsync();
         }
 
         public async Task<Project> GetByIdAsync(int id)
@@ -25,6 +29,8 @@ namespace ia_back.Data.Custom_Repositories
             if (foundProject != null)
             {
                 await _db.Entry(foundProject).Reference(p => p.TeamLeader).LoadAsync();
+                await _db.Entry(foundProject).Collection(p => p.RequestedDevelopers).LoadAsync();
+                await _db.Entry(foundProject).Collection(p => p.AssignedDevelopers).LoadAsync();
             }
             return foundProject;
         }

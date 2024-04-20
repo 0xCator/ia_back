@@ -1,9 +1,12 @@
 ﻿using ia_back.Data;
 using ia_back.Models;
 using ia_back.DTOs.Login;
+using ia_back.DTOs.RequestDTO;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using BCrypt.Net;
+using ia_back.Data.Custom_Repositories;
+using Azure.Core;
 
 namespace ia_back.Controllers
 {
@@ -12,12 +15,11 @@ namespace ia_back.Controllers
     public class UserController : Controller
     {
         private readonly IDataRepository<User> _userRepository;
-        private readonly ProjectRequestContorller _projectRequestContorller;
+        private readonly IDataRepository<Project> _projectRepository;
 
-        public UserController(IDataRepository<User> userRepository, ProjectRequestContorller projectRequestContorller)
+        public UserController(IDataRepository<User> userRepository)
         {
             _userRepository = userRepository;
-            _projectRequestContorller = projectRequestContorller;
         }
 
         [HttpPost("login")]
@@ -71,23 +73,39 @@ namespace ia_back.Controllers
             return Ok(registeringUser);
         }
 
-        [HttpPost("acceptRequest/{RequestId}")]
-        public async Task<IActionResult> AcceptRequest(int RequestId)
+        [HttpPost("acceptRequest")]
+        public async Task<IActionResult> AcceptRequest(RequestDTO request)
         {
-            if (await _projectRequestContorller.AcceptProjectRequest(RequestId) == null)
+            var user = await _userRepository.GetByIdAsync(request.UserId);
+            if (user == null)
             {
-                return NotFound("Request doesn't exist");
+                return NotFound("User not found");
             }
+            var project = user.ProjectRequests.FirstOrDefault(p => p.Id == request.ProjectId);
+            user.AssignedProjects.Add(project);
+            user.ProjectRequests.Remove(project);
+
+            await _userRepository.UpdateAsync(user);
+            await _userRepository.Save();
+
             return Ok();
         }
 
-        [HttpPost("rejectRequest/{RequestId}")]
-        public async Task<IActionResult> RejectRequest(int RequestId)
+        [HttpPost("rejectRequest")]
+        public async Task<IActionResult> RejectRequest(RequestDTO request)
         {
-            if (await _projectRequestContorller.DeleteProjectRequest(RequestId) == null)
+            var user = await _userRepository.GetByIdAsync(request.UserId);
+            if (user == null)
             {
-                return NotFound("Request doesn't exist");
+                return NotFound("User not found");
             }
+            var project = user.ProjectRequests.FirstOrDefault(p => p.Id == request.ProjectId);
+
+            user.ProjectRequests.Remove(project);
+
+            await _userRepository.UpdateAsync(user);
+            await _userRepository.Save();
+
             return Ok();
         }
     }
