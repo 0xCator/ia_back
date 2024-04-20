@@ -121,7 +121,7 @@ namespace ia_back.Controllers
         }
 
         [HttpPost("id")]
-        public async Task<IActionResult> AddDeveloperToProject(int id, string developerName)
+        public async Task<IActionResult> AssigneDeveloperToProject(int id, string developerName)
         {
             var project = await _projectRepository.GetByIdAsync(id);
             if (project == null)
@@ -165,6 +165,81 @@ namespace ia_back.Controllers
             {
                 return NotFound("Developer doesn't exist");
             }
+            
+            if(project.RequestedDevelopers.Contains(developer))
+            {
+                project.RequestedDevelopers.Remove(developer);
+            }
+            else if (project.AssignedDevelopers.Contains(developer))
+            {
+                project.AssignedDevelopers.Remove(developer);
+            }
+            else
+            {
+                return NotFound("Developer is not in the project");
+            }
+            
+            await _projectRepository.UpdateAsync(project);
+            await _projectRepository.Save();
+
+            return Ok();
+        }
+
+        [HttpPost("id")]
+        public async Task<IActionResult> AcceptProjectRequest(int id, string developerName)
+        {
+            var project = await _projectRepository.GetByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound();
+            }
+            var userRepository = _userRepository as UserRepository;
+            if (userRepository == null)
+            {
+                return NotFound("User repository is null");
+            }
+            var developer = await userRepository.GetByUsernameAsync(developerName);
+            if (developer == null)
+            {
+                return NotFound("Developer doesn't exist");
+            }
+
+            if (!project.RequestedDevelopers.Contains(developer))
+            {
+                return NotFound("Developer is not in the requested developers list");
+            }
+
+            project.RequestedDevelopers.Remove(developer);
+            project.AssignedDevelopers.Add(developer);
+            await _projectRepository.UpdateAsync(project);
+            await _projectRepository.Save();
+
+            return Ok();
+        }
+
+        [HttpPost("id")]
+        public async Task<IActionResult> RejectProjectRequest(int id, string developerName)
+        {
+            var project = await _projectRepository.GetByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound();
+            }
+            var userRepository = _userRepository as UserRepository;
+            if (userRepository == null)
+            {
+                return NotFound("User repository is null");
+            }
+            var developer = await userRepository.GetByUsernameAsync(developerName);
+            if (developer == null)
+            {
+                return NotFound("Developer doesn't exist");
+            }
+
+            if (!project.RequestedDevelopers.Contains(developer))
+            {
+                return NotFound("Developer is not in the requested developers list");
+            }
 
             project.RequestedDevelopers.Remove(developer);
             await _projectRepository.UpdateAsync(project);
@@ -172,5 +247,6 @@ namespace ia_back.Controllers
 
             return Ok();
         }
+
     }
 }
