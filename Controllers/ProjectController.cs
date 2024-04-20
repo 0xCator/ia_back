@@ -46,7 +46,12 @@ namespace ia_back.Controllers
                 {
                     return NotFound("Invalid names");
                 }
-                var developer = await (_userRepository as UserRepository).GetByUsernameAsync(developerName);
+                var userRepository = _userRepository as UserRepository;
+                if (userRepository == null)
+                {
+                    return NotFound("User repository is null");
+                }
+                var developer = await userRepository.GetByUsernameAsync(developerName);
                 if (developer == null)
                 {
                     return NotFound("Developer doesn't exist");
@@ -113,6 +118,59 @@ namespace ia_back.Controllers
             }
 
             return Ok(projects);
+        }
+
+        [HttpPost("id")]
+        public async Task<IActionResult> AddDeveloperToProject(int id, string developerName)
+        {
+            var project = await _projectRepository.GetByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            var userRepository = _userRepository as UserRepository;
+            if (userRepository == null)
+            {
+                return NotFound("User repository is null");
+            }
+            var developer = await userRepository.GetByUsernameAsync(developerName);
+            if (developer == null)
+            {
+                return NotFound("Developer doesn't exist");
+            }
+
+            project.RequestedDevelopers.Add(developer);
+            await _projectRepository.UpdateAsync(project);
+            await _projectRepository.Save();
+
+            return Ok();
+        }
+
+        [HttpDelete("id")]
+        public async Task<IActionResult> RemoveDeveloperFromProject(int id, string developerName)
+        {
+            var project = await _projectRepository.GetByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound();
+            }
+            var userRepository = _userRepository as UserRepository; 
+            if (userRepository == null)
+            {
+                return NotFound("User repository is null");
+            }
+            var developer = await userRepository.GetByUsernameAsync(developerName);
+            if (developer == null)
+            {
+                return NotFound("Developer doesn't exist");
+            }
+
+            project.RequestedDevelopers.Remove(developer);
+            await _projectRepository.UpdateAsync(project);
+            await _projectRepository.Save();
+
+            return Ok();
         }
     }
 }
