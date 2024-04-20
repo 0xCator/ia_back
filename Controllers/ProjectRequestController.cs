@@ -41,12 +41,13 @@ namespace ia_back.Controllers
             return Ok(projectRequests);
         }
         
-        public async Task<bool> CreateProjectRequest(ReqestEntryDTO ReqestEntryDTO){
+        [HttpPost]
+        public async Task<IActionResult> CreateProjectRequest(ReqestEntryDTO ReqestEntryDTO){
             var project = await _projectRepository.GetByIdAsync(ReqestEntryDTO.ProjectId);
             var user = await _userRepository.GetByIdAsync(ReqestEntryDTO.UserId);
             if (project == null || user == null)
             {
-                return false;
+                return NotFound("Project or user not found");
             }
             
             var projectRequest = new ProjectRequest
@@ -62,42 +63,44 @@ namespace ia_back.Controllers
             await _projectRepository.Save(); 
             await _projectRequestRepository.AddAsync(projectRequest);
             await _projectRequestRepository.Save();
-            return true; 
+            return Ok(projectRequest); 
         }
 
-        public async Task<bool> DeleteProjectRequest(int RequestId){
+        [HttpDelete("{RequestId}")]
+        public async Task<IActionResult> DeleteProjectRequest(int RequestId){
             var projectRequest = await _projectRequestRepository.GetByIdAsync(RequestId);
             if (projectRequest == null)
             {
-                return false;
+                return NotFound("Project request not found");
             }
             await _projectRequestRepository.DeleteAsync(projectRequest);
             await _projectRequestRepository.Save();
-            return true;
+            return Ok(); 
         }
 
-        public async Task<bool> AcceptProjectRequest(int RequestId){
+        [HttpPatch("{RequestId}")]
+        public async Task<IActionResult> AcceptProjectRequest(int RequestId){
             var projectRequest = await _projectRequestRepository.GetByIdAsync(RequestId);
             if (projectRequest == null)
             {
-                return false;
+                return NotFound("Project request not found");
             }
             var project = await _projectRepository.GetByIdAsync(projectRequest.ProjectId);
             var user = await _userRepository.GetByIdAsync(projectRequest.UserId);
             if (project == null || user == null)
             {
-                return false;
+                return NotFound("Project or user not found");
             }
 
-            if(!this.DeleteProjectRequest(RequestId).Result){
-                return false;
+            if(this.DeleteProjectRequest(RequestId).Result == null){ 
+                return NotFound("Request deletion failed");
             }
 
             project.AssignedDevelopers.Add(user);
             project.RequestedDevelopers.Remove(user);
             await _projectRepository.UpdateAsync(project);
             await _projectRepository.Save();
-            return true;
+            return Ok();
         }
 
     

@@ -71,7 +71,7 @@ namespace ia_back.Controllers
         [HttpPost("acceptRequest/{RequestId}")]
         public async Task<IActionResult> AcceptRequest(int RequestId)
         {
-            if (!await _projectRequestContorller.AcceptProjectRequest(RequestId))
+            if (await _projectRequestContorller.AcceptProjectRequest(RequestId) == null)
             {
                 return NotFound("Request doesn't exist");
             }
@@ -81,7 +81,7 @@ namespace ia_back.Controllers
         [HttpPost("rejectRequest/{RequestId}")]
         public async Task<IActionResult> RejectRequest(int RequestId)
         {
-            if (!await _projectRequestContorller.DeleteProjectRequest(RequestId))
+            if (await _projectRequestContorller.DeleteProjectRequest(RequestId) == null)
             {
                 return NotFound("Request doesn't exist");
             }

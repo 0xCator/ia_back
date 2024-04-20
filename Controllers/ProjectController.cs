@@ -60,11 +60,11 @@ namespace ia_back.Controllers
                 {
                     return NotFound("Developer doesn't exist");
                 }
-                if(! await _projectRequestContorller.CreateProjectRequest(new ReqestEntryDTO
+                if(await _projectRequestContorller.CreateProjectRequest(new ReqestEntryDTO
                 {
                     ProjectId = project.Id,
                     UserId = developer.Id
-                }))
+                }) == null)
                 {
                     return NotFound("Request failed");
                 }
@@ -149,12 +149,13 @@ namespace ia_back.Controllers
             {
                 ProjectId = id,
                 UserId = developer.Id 
-            })){
+            }) == null){
 
-                return Ok();
+                return NotFound("Request failed"); 
             }
+
+            return Ok();
             
-            return NotFound("Request failed"); 
         }
 
         [HttpDelete("id/developerName")]
