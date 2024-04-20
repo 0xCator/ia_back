@@ -74,5 +74,45 @@ namespace ia_back.Controllers
 
             return Ok();
         }
+
+        [HttpPatch("id")]
+        public async Task<IActionResult> UpdateProjectName(int id, string newName)
+        {
+            var project = await _projectRepository.GetByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            project.Name = newName;
+            await _projectRepository.UpdateAsync(project);
+            await _projectRepository.Save();
+
+            return Ok();
+        }
+
+        [HttpGet("id")]
+        public async Task<IActionResult> GetProject(int id)
+        {
+            var project = await _projectRepository.GetByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(project);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetProjects()
+        {
+            var projects = await _projectRepository.GetAllAsync();
+            if (projects == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(projects);
+        }
     }
 }
