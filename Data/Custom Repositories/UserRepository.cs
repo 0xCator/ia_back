@@ -35,6 +35,18 @@ namespace ia_back.Data.Custom_Repositories
             return foundUser;
         }
 
+        public async Task<User> GetByUsernameAsync(string username)
+        {
+            var foundUser = await table.FirstOrDefaultAsync(u => u.Username == username);
+            if (foundUser != null)
+            {
+                await _db.Entry(foundUser).Collection(u => u.CreatedProjects).LoadAsync();
+                await _db.Entry(foundUser).Collection(u => u.AssignedProjects).LoadAsync();
+                await _db.Entry(foundUser).Collection(u => u.ProjectRequests).LoadAsync();
+            }
+            return foundUser;
+        }
+
         public async Task AddAsync(User entity)
         {
             await table.AddAsync(entity);

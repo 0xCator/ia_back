@@ -1,0 +1,78 @@
+﻿using ia_back.Data.Custom_Repositories;
+using ia_back.Data;
+using ia_back.Models;
+using Microsoft.AspNetCore.Mvc;
+using ia_back.DTOs.ProjectDTO;
+
+namespace ia_back.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ProjectController : Controller
+    {
+        private readonly IDataRepository<Project> _projectRepository;
+        private readonly IDataRepository<User> _userRepository;
+
+        public ProjectController(IDataRepository<Project> projectRepository, IDataRepository<User> userRepository)
+        {
+            _projectRepository = projectRepository;
+            _userRepository = userRepository;
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> CreateProject(ProjectEntryDTO projectInfo)
+        {
+            if (projectInfo == null)
+            {
+                return BadRequest();
+            }
+
+            var teamLeader = await _userRepository.GetByIdAsync(projectInfo.TeamLeaderID);
+            if (teamLeader == null)
+            {
+                return NotFound("Team leader doesn't exist");
+            }
+
+            Project project = new Project
+            {
+                Name = projectInfo.Name,
+                TeamLeaderId = projectInfo.TeamLeaderID,
+                RequestedDevelopers = new List<User>(),
+            };
+
+            foreach (var developerName in projectInfo.RequestedDevelopers)
+            {
+                if (developerName == null || developerName.Length == 0 || developerName == teamLeader.Name)
+                {
+                    return NotFound("Invalid names");
+                }
+                var developer = await (_userRepository as UserRepository).GetByUsernameAsync(developerName);
+                if (developer == null)
+                {
+                    return NotFound("Developer doesn't exist");
+                }
+                project.RequestedDevelopers.Add(developer);
+            }
+
+            await _projectRepository.AddAsync(project);
+            await _projectRepository.Save();
+
+            return Ok();
+        }
+
+        [HttpDelete("id")]
+        public async Task<IActionResult> DeleteProject(int id)
+        {
+            var project = await _projectRepository.GetByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            await _projectRepository.DeleteAsync(project);
+            await _projectRepository.Save();
+
+            return Ok();
+        }
+    }
+}
