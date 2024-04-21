@@ -45,7 +45,7 @@ namespace ia_back.Controllers
                 var fileContent = memoryStream.ToArray();
                 var fileName = Convert.ToBase64String(Encoding.UTF8.GetBytes(file.FileName));
                 var base64FileContent = Convert.ToBase64String(fileContent);
-                var fileContentWithFileName = fileName + "|" + base64FileContent;
+                var fileContentWithFileName = fileName + "-" + base64FileContent;
                 projectTask.Attachment = fileContentWithFileName;
                 await _projectTaskRepository.UpdateAsync(projectTask);
                 await _projectTaskRepository.Save();
