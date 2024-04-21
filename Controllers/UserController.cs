@@ -34,7 +34,6 @@ namespace ia_back.Controllers
                 return BadRequest();
             }
 
-            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(login.Password);
             var users = await _userRepository.GetAllAsync();
             var user = users.FirstOrDefault(u => u.Username.ToLower() == login.Username.ToLower() && 
                                             BCrypt.Net.BCrypt.Verify(login.Password, u.Password));
