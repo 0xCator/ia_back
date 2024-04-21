@@ -20,6 +20,7 @@ namespace ia_back.Data.Custom_Repositories
                 .Include(p => p.TeamLeader)
                 .Include(p => p.RequestedDevelopers)
                 .Include(p => p.AssignedDevelopers)
+                .Include(p => p.Tasks)
                 .ToListAsync();
         }
 
@@ -31,6 +32,7 @@ namespace ia_back.Data.Custom_Repositories
                 await _db.Entry(foundProject).Reference(p => p.TeamLeader).LoadAsync();
                 await _db.Entry(foundProject).Collection(p => p.RequestedDevelopers).LoadAsync();
                 await _db.Entry(foundProject).Collection(p => p.AssignedDevelopers).LoadAsync();
+                await _db.Entry(foundProject).Collection(p => p.Tasks).LoadAsync();
             }
             return foundProject;
         }
