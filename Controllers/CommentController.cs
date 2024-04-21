@@ -1,10 +1,12 @@
 ﻿using ia_back.Data;
 using ia_back.DTOs.CommentDTO;
 using ia_back.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ia_back.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class CommentController : Controller

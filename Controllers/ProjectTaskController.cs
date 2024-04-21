@@ -3,9 +3,11 @@ using ia_back.Data.Custom_Repositories;
 using ia_back.Data;
 using ia_back.DTOs.TaskDTO;
 using ia_back.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ia_back.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ProjectTaskController : Controller

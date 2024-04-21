@@ -7,6 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ia_back.Controllers
 {
@@ -52,6 +53,8 @@ namespace ia_back.Controllers
             List<Claim> claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Username),
+                new Claim(JwtRegisteredClaimNames.Aud, _configuration["Jwt:Audience"]),
+                new Claim(JwtRegisteredClaimNames.Iss, _configuration["Jwt:Issuer"])
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetSection("Jwt:Key").Value!));
@@ -60,6 +63,8 @@ namespace ia_back.Controllers
             var token = new JwtSecurityToken(
                 claims: claims,
                 expires: DateTime.Now.AddDays(30),
+                audience: _configuration["Audience"],
+                issuer: _configuration["Issuer"],
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -98,6 +103,7 @@ namespace ia_back.Controllers
             return Ok(registeringUser);
         }
 
+        [Authorize]
         [HttpPost("acceptRequest")]
         public async Task<IActionResult> AcceptRequest(RequestDTO request)
         {
@@ -116,6 +122,7 @@ namespace ia_back.Controllers
             return Ok();
         }
 
+        [Authorize]
         [HttpPost("rejectRequest")]
         public async Task<IActionResult> RejectRequest(RequestDTO request)
         {
