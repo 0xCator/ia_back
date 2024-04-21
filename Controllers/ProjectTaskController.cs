@@ -35,15 +35,18 @@ namespace ia_back.Controllers
             {
                 return BadRequest();
             }
-            using (var reader = new StreamReader(file.OpenReadStream()))
+            using (var memoryStream = new MemoryStream())
             {
-                var fileContent = await reader.ReadToEndAsync();
-                var attachment = file.FileName + '-' + fileContent;
-                var base64FileContent = Convert.ToBase64String(Encoding.UTF8.GetBytes(attachment));
+                await file.CopyToAsync(memoryStream);
+                if (memoryStream.Length == 0)
+                {
+                    return BadRequest();
+                }
+                var fileContent = memoryStream.ToArray();
+                var base64FileContent = Convert.ToBase64String(fileContent);
                 projectTask.Attachment = base64FileContent;
                 await _projectTaskRepository.UpdateAsync(projectTask);
                 await _projectTaskRepository.Save();
-
                 return Ok();
             }
 
@@ -64,11 +67,16 @@ namespace ia_back.Controllers
             }
 
             var base64FileContent = projectTask.Attachment;
-            var fileContent = Encoding.UTF8.GetString(Convert.FromBase64String(base64FileContent));
-            var fileName = fileContent.Split('-')[0];
-            var fileContentWithoutName = fileContent.Substring(fileName.Length + 1);
-            var bytes = Encoding.UTF8.GetBytes(fileContentWithoutName);
-            return File(bytes, "application/octet-stream", fileName);
+
+            try
+            {
+                var fileContent = Convert.FromBase64String(base64FileContent);
+                return File(fileContent, "application/octet-stream");
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
 
