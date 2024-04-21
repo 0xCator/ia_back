@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ia_back.Data.Custom_Repositories;
 using ia_back.Data;
 using ia_back.DTOs.TaskDTO;
 using ia_back.Models;
@@ -145,10 +144,6 @@ namespace ia_back.Controllers
         [HttpPatch("{id}")]
         public async Task<IActionResult> UpdateTaskStatus(int id, ProjectStatus newStatus)
         {
-            if (newStatus == null)
-            {
-                return BadRequest();
-            }
 
             var projectTask = await _projectTaskRepository.GetByIdAsync(id);
             if (projectTask == null)
