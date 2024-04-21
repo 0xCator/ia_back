@@ -43,8 +43,10 @@ namespace ia_back.Controllers
                     return BadRequest();
                 }
                 var fileContent = memoryStream.ToArray();
+                var fileName = Convert.ToBase64String(Encoding.UTF8.GetBytes(file.FileName));
                 var base64FileContent = Convert.ToBase64String(fileContent);
-                projectTask.Attachment = base64FileContent;
+                var fileContentWithFileName = fileName + "-" + base64FileContent;
+                projectTask.Attachment = fileContentWithFileName;
                 await _projectTaskRepository.UpdateAsync(projectTask);
                 await _projectTaskRepository.Save();
                 return Ok();
@@ -70,8 +72,12 @@ namespace ia_back.Controllers
 
             try
             {
-                var fileContent = Convert.FromBase64String(base64FileContent);
-                return File(fileContent, "application/octet-stream");
+                var fileName = base64FileContent.Split('-')[0];
+                var fileContent = base64FileContent.Split('-')[1];
+                var fileBytes = Convert.FromBase64String(fileContent);
+                var fileNameString = Convert.FromBase64String(fileName);
+                return File(fileBytes, "application/octet-stream", Encoding.UTF8.GetString(fileNameString));
+
             }
             catch (Exception e)
             {
