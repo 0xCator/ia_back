@@ -2,11 +2,11 @@
 using ia_back.Models;
 using ia_back.DTOs.Login;
 using ia_back.DTOs.RequestDTO;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using BCrypt.Net;
-using ia_back.Data.Custom_Repositories;
-using Azure.Core;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ia_back.Controllers
 {
@@ -16,14 +16,17 @@ namespace ia_back.Controllers
     {
         private readonly IDataRepository<User> _userRepository;
         private readonly IDataRepository<Project> _projectRepository;
+        private readonly IConfiguration _configuration;
 
-        public UserController(IDataRepository<User> userRepository)
+
+        public UserController(IDataRepository<User> userRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
+            _configuration = configuration;
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginDTO login)
+        public async Task<IActionResult> Login(LoginDTO login, [FromServices] IConfiguration configuration)
         {
             if (login == null)
             {
@@ -33,13 +36,35 @@ namespace ia_back.Controllers
             string hashedPassword = BCrypt.Net.BCrypt.HashPassword(login.Password);
             var users = await _userRepository.GetAllAsync();
             var user = users.FirstOrDefault(u => u.Username.ToLower() == login.Username.ToLower() && 
-                                            u.Password == hashedPassword);
+                                            BCrypt.Net.BCrypt.Verify(login.Password, u.Password));
             if (user == null)
             {
                 return NotFound("User doesn't exist");
             }
-            return Ok(user);
+
+            string token = CreateToken(user);
+
+            return Ok(token);
         }
+
+        private string CreateToken(User user){
+            
+            List<Claim> claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Username),
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetSection("Jwt:Key").Value!));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                claims: claims,
+                expires: DateTime.Now.AddDays(30),
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDTO register)

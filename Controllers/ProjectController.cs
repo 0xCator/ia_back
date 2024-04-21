@@ -3,9 +3,12 @@ using ia_back.Data;
 using ia_back.Models;
 using Microsoft.AspNetCore.Mvc;
 using ia_back.DTOs.ProjectDTO;
+using ia_back.DTOs.RequestDTO;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ia_back.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ProjectController : Controller
