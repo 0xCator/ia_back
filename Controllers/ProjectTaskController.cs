@@ -45,7 +45,7 @@ namespace ia_back.Controllers
                 var fileContent = memoryStream.ToArray();
                 var fileName = Convert.ToBase64String(Encoding.UTF8.GetBytes(file.FileName));
                 var base64FileContent = Convert.ToBase64String(fileContent);
-                var fileContentWithFileName = fileName + "-" + base64FileContent;
+                var fileContentWithFileName = fileName + "|" + base64FileContent;
                 projectTask.Attachment = fileContentWithFileName;
                 await _projectTaskRepository.UpdateAsync(projectTask);
                 await _projectTaskRepository.Save();
@@ -100,8 +100,8 @@ namespace ia_back.Controllers
             }
 
             var base64FileContent = projectTask.Attachment;
-            var fileContent = Encoding.UTF8.GetString(Convert.FromBase64String(base64FileContent));
-            var fileName = fileContent.Split('-')[0];
+            var fileNameBase64 = base64FileContent.Split('-')[0];
+            var fileName = Encoding.UTF8.GetString(Convert.FromBase64String(fileNameBase64));
             return Ok(fileName);
         }
 
