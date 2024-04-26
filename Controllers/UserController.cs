@@ -52,6 +52,7 @@ namespace ia_back.Controllers
             List<Claim> claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Username),
+                new Claim("id", user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Aud, _configuration["Jwt:Audience"]),
                 new Claim(JwtRegisteredClaimNames.Iss, _configuration["Jwt:Issuer"])
             };
