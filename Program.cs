@@ -2,11 +2,11 @@ using ia_back.Data;
 using ia_back.Data.Custom_Repositories;
 using ia_back.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using ia_back.WebSocket;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -70,8 +70,26 @@ builder.Services.AddScoped<IDataRepository<ProjectTask>, TaskRepository>();
 builder.Services.AddScoped<IDataRepository<Comment>, CommentRepository>();
 builder.Services.AddControllersWithViews().AddJsonOptions(options => options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
+builder.Services.AddSingleton<SocketManager>();
 
 var app = builder.Build();
+
+app.UseWebSockets();
+
+app.Map("/ws", async context =>
+{
+    if (context.WebSockets.IsWebSocketRequest)
+    {
+        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+        Socket socket = new Socket();
+        await socket.Start(webSocket);
+        SocketManager.Instance.AddSocket(socket);
+    }
+    else
+    {
+        context.Response.StatusCode = 400;
+    }
+});
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -83,4 +101,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();

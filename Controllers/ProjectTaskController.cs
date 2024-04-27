@@ -4,6 +4,7 @@ using ia_back.DTOs.TaskDTO;
 using ia_back.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Text;
+using ia_back.WebSocket;
 
 namespace ia_back.Controllers
 {
@@ -14,6 +15,8 @@ namespace ia_back.Controllers
     {
         private readonly IDataRepository<ProjectTask> _projectTaskRepository;
         private readonly IDataRepository<Project> _projectRepository;
+        private readonly SocketManager _socketManager = new SocketManager();
+
 
         public ProjectTaskController(IDataRepository<ProjectTask> projectTaskRepository,
                                     IDataRepository<Project> projectRepository)
@@ -137,8 +140,11 @@ namespace ia_back.Controllers
                 Attachment = ""
             };
 
+            var assignedDevs = project.AssignedDevelopers;
+
             await _projectTaskRepository.AddAsync(projectTask);
             await _projectTaskRepository.Save();
+            await _socketManager.TaskHasUpdate(assignedDevs);
 
             return Ok(projectTask);
         }
@@ -167,13 +173,16 @@ namespace ia_back.Controllers
 
             projectTask.Status = newStatus;
 
+            var project = await _projectRepository.GetByIdAsync(projectTask.ProjectId);
+            var assignedDevs = project.AssignedDevelopers;
+
             await _projectTaskRepository.UpdateAsync(projectTask);
             await _projectTaskRepository.Save();
+            await _socketManager.TaskHasUpdate(assignedDevs);
 
             return Ok();
         }
 
-        //Upload attachment
         
     }
 }

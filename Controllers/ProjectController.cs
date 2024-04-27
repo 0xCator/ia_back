@@ -4,6 +4,7 @@ using ia_back.Models;
 using Microsoft.AspNetCore.Mvc;
 using ia_back.DTOs.ProjectDTO;
 using Microsoft.AspNetCore.Authorization;
+using ia_back.WebSocket;
 
 namespace ia_back.Controllers
 {
@@ -14,6 +15,7 @@ namespace ia_back.Controllers
     {
         private readonly IDataRepository<Project> _projectRepository;
         private readonly IDataRepository<User> _userRepository;
+        private readonly SocketManager _socketManager = new SocketManager();
 
         public ProjectController(IDataRepository<Project> projectRepository, IDataRepository<User> userRepository)
         {
@@ -145,7 +147,7 @@ namespace ia_back.Controllers
 
             await _projectRepository.UpdateAsync(project);
             await _projectRepository.Save();
-
+            await _socketManager.ProjectHasUpdate(developer.Id);
             return Ok();
             
         }
