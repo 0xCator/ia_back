@@ -1,4 +1,5 @@
 ﻿using ia_back.Data;
+using ia_back.Data.Custom_Repositories;
 using ia_back.DTOs.CommentDTO;
 using ia_back.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -13,11 +14,11 @@ namespace ia_back.Controllers
     {
         private readonly IDataRepository<Comment> _commentRepository;
         private readonly IDataRepository<ProjectTask> _projectTaskRepository;
-        private readonly IDataRepository<User> _userRepository;
+        private readonly IUserRepository _userRepository;
         
         public CommentController(IDataRepository<Comment> commentRepository,
                                 IDataRepository<ProjectTask> projectTaskRepository,
-                                IDataRepository<User> userRepository)
+                                IUserRepository userRepository)
         {
             _commentRepository = commentRepository;
             _projectTaskRepository = projectTaskRepository;
@@ -70,7 +71,8 @@ namespace ia_back.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetComment(int id)
         {
-            var comment = await _commentRepository.GetByIdAsync(id);
+            var comment = await _commentRepository.GetByIdIncludeAsync(id,
+                                                                       c=>c.User);
             if (comment == null)
             {
                 return NotFound();

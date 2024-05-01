@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace ia_back.Data
 {
@@ -18,9 +19,31 @@ namespace ia_back.Data
             return await table.ToListAsync();
         }
 
+        public async Task<IEnumerable<T>> GetAllIncludeAsync(params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = table;
+
+            if (includes != null)
+            {
+                query = includes.Aggregate(query, (current, include) => current.Include(include));
+            }
+            return await query.ToListAsync();
+        }
+
         public async Task<T> GetByIdAsync(int id)
         {
             return await table.FindAsync(id);
+        }
+
+        public async Task<T> GetByIdIncludeAsync(int id, params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = table;
+
+            if (includes != null)
+            {
+                query = includes.Aggregate(query, (current, include) => current.Include(include));
+            }
+            return await query.FirstOrDefaultAsync();
         }
 
         public async Task AddAsync(T entity)

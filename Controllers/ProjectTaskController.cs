@@ -118,7 +118,8 @@ namespace ia_back.Controllers
                 return BadRequest();
             }
 
-            var project = await _projectRepository.GetByIdAsync(projectTaskInfo.ProjectID);
+            var project = await _projectRepository.GetByIdIncludeAsync(projectTaskInfo.ProjectID,
+                                                                       p=>p.AssignedDevelopers);
             if (project == null)
             {
                 return NotFound("Project doesn't exist");
@@ -152,7 +153,9 @@ namespace ia_back.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProjectTask(int id)
         {
-            var projectTask = await _projectTaskRepository.GetByIdAsync(id);
+            var projectTask = await _projectTaskRepository.GetByIdIncludeAsync(id,
+                                                                               t=>t.Comments,
+                                                                               t=>t.AssignedDev);
             if (projectTask == null)
             {
                 return NotFound();
@@ -173,7 +176,8 @@ namespace ia_back.Controllers
 
             projectTask.Status = newStatus;
 
-            var project = await _projectRepository.GetByIdAsync(projectTask.ProjectId);
+            var project = await _projectRepository.GetByIdIncludeAsync(projectTask.ProjectId,
+                                                                       p=>p.AssignedDevelopers);
             var assignedDevs = project.AssignedDevelopers;
 
             await _projectTaskRepository.UpdateAsync(projectTask);

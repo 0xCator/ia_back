@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ia_back.Data.Custom_Repositories
 {
-    public class UserRepository : IDataRepository<User>
+    public class UserRepository : IUserRepository
     {
         private readonly DataContext _db;
         private readonly DbSet<User> table;
@@ -37,7 +37,7 @@ namespace ia_back.Data.Custom_Repositories
 
         public async Task<User> GetByUsernameAsync(string username)
         {
-            var foundUser = await table.FirstOrDefaultAsync(u => u.Username == username);
+            var foundUser = await table.FirstOrDefaultAsync(u => u.Username == username.ToLower());
             if (foundUser != null)
             {
                 await _db.Entry(foundUser).Collection(u => u.CreatedProjects).LoadAsync();
@@ -45,6 +45,11 @@ namespace ia_back.Data.Custom_Repositories
                 await _db.Entry(foundUser).Collection(u => u.ProjectRequests).LoadAsync();
             }
             return foundUser;
+        }
+
+        public async Task<bool> UserExists(string username, string email)
+        {
+            return await table.AnyAsync(u => u.Username == username || u.Email == email);
         }
 
         public async Task AddAsync(User entity)

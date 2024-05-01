@@ -14,10 +14,10 @@ namespace ia_back.Controllers
     public class ProjectController : Controller
     {
         private readonly IDataRepository<Project> _projectRepository;
-        private readonly IDataRepository<User> _userRepository;
+        private readonly IUserRepository _userRepository;
         private readonly SocketManager _socketManager = new SocketManager();
 
-        public ProjectController(IDataRepository<Project> projectRepository, IDataRepository<User> userRepository)
+        public ProjectController(IDataRepository<Project> projectRepository, IUserRepository userRepository)
         {
             _projectRepository = projectRepository;
             _userRepository = userRepository;
@@ -50,12 +50,7 @@ namespace ia_back.Controllers
                 {
                     return NotFound("Invalid names");
                 }
-                var userRepository = _userRepository as UserRepository;
-                if (userRepository == null)
-                {
-                    return NotFound("User repository is null");
-                }
-                var developer = await userRepository.GetByUsernameAsync(developerName);
+                var developer = await _userRepository.GetByUsernameAsync(developerName);
                 if (developer == null)
                 {
                     return NotFound("Developer doesn't exist");
@@ -84,7 +79,7 @@ namespace ia_back.Controllers
             return Ok();
         }
 
-        [HttpPatch("id/newName")]
+        [HttpPatch("{id}/{newName}")]
         public async Task<IActionResult> UpdateProjectName(int id, string newName)
         {
             var project = await _projectRepository.GetByIdAsync(id);
@@ -100,10 +95,13 @@ namespace ia_back.Controllers
             return Ok();
         }
 
-        [HttpGet("id")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetProject(int id)
         {
-            var project = await _projectRepository.GetByIdAsync(id);
+            var project = await _projectRepository.GetByIdIncludeAsync(id,
+                                                                       p => p.TeamLeader,
+                                                                       p => p.RequestedDevelopers,
+                                                                       p => p.AssignedDevelopers);
             if (project == null)
             {
                 return NotFound();
@@ -115,7 +113,9 @@ namespace ia_back.Controllers
         [HttpGet]
         public async Task<IActionResult> GetProjects()
         {
-            var projects = await _projectRepository.GetAllAsync();
+            var projects = await _projectRepository.GetAllIncludeAsync(p => p.TeamLeader,
+                                                                       p => p.RequestedDevelopers,
+                                                                       p => p.AssignedDevelopers);
             if (projects == null)
             {
                 return NotFound();
@@ -124,23 +124,25 @@ namespace ia_back.Controllers
             return Ok(projects);
         }
 
-        [HttpPost("projId/sendRequest/developerName")]
+        [HttpPost("{id}/sendRequest/{developerName}")]
         public async Task<IActionResult> AssignDeveloperToProject(int id, string developerName)
         {
-            var project = await _projectRepository.GetByIdAsync(id);
+            var project = await _projectRepository.GetByIdIncludeAsync(id, 
+                                                                       p => p.TeamLeader, 
+                                                                       p=>p.RequestedDevelopers, 
+                                                                       p=>p.AssignedDevelopers);
             if (project == null)
             {
                 return NotFound();
             }
-            var userRepository = _userRepository as UserRepository;
-            if (userRepository == null)
-            {
-                return NotFound("User repository is null");
-            }
-            var developer = await userRepository.GetByUsernameAsync(developerName);
+            var developer = await _userRepository.GetByUsernameAsync(developerName);
             if (developer == null)
             {
                 return NotFound("Developer doesn't exist");
+            }
+            if (project.RequestedDevelopers.Contains(developer) || project.AssignedDevelopers.Contains(developer))
+            {
+                return BadRequest("Developer is already in the project");
             }
 
             project.RequestedDevelopers.Add(developer);
@@ -152,20 +154,18 @@ namespace ia_back.Controllers
             
         }
 
-        [HttpDelete("id/developerName")]
+        [HttpDelete("{id}/{developerName}")]
         public async Task<IActionResult> RemoveDeveloperFromProject(int id, string developerName)
         {
-            var project = await _projectRepository.GetByIdAsync(id);
+            var project = await _projectRepository.GetByIdIncludeAsync(id,
+                                                                       p => p.TeamLeader,
+                                                                       p => p.RequestedDevelopers,
+                                                                       p => p.AssignedDevelopers);
             if (project == null)
             {
                 return NotFound();
             }
-            var userRepository = _userRepository as UserRepository; 
-            if (userRepository == null)
-            {
-                return NotFound("User repository is null");
-            }
-            var developer = await userRepository.GetByUsernameAsync(developerName);
+            var developer = await _userRepository.GetByUsernameAsync(developerName);
             if (developer == null)
             {
                 return NotFound("Developer doesn't exist");

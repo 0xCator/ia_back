@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authorization;
+using ia_back.Data.Custom_Repositories;
 
 namespace ia_back.Controllers
 {
@@ -15,12 +16,11 @@ namespace ia_back.Controllers
     [ApiController]
     public class UserController : Controller
     {
-        private readonly IDataRepository<User> _userRepository;
-        private readonly IDataRepository<Project> _projectRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
 
 
-        public UserController(IDataRepository<User> userRepository, IConfiguration configuration)
+        public UserController(IUserRepository userRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
             _configuration = configuration;
@@ -79,10 +79,8 @@ namespace ia_back.Controllers
                 return BadRequest();
             }
 
-            var users = await _userRepository.GetAllAsync();
-            var user = users.FirstOrDefault(u => u.Username.ToLower() == register.Username.ToLower() ||
-                                            u.Email.ToLower() == register.Email.ToLower());
-            if (user != null)
+            var userExists = await _userRepository.UserExists(register.Username, register.Email);
+            if (userExists)
             {
                 return BadRequest("User already exists");
             }
@@ -91,7 +89,7 @@ namespace ia_back.Controllers
 
             User registeringUser = new User
             {
-                Name = register.Name,
+                Name = register.Name.ToLower(),
                 Email = register.Email,
                 Username = register.Username,
                 Password = hashedPassword, 
@@ -113,6 +111,11 @@ namespace ia_back.Controllers
                 return NotFound("User not found");
             }
             var project = user.ProjectRequests.FirstOrDefault(p => p.Id == request.ProjectId);
+            if (project == null)
+            {
+                return NotFound("Project not found");
+            }
+
             user.AssignedProjects.Add(project);
             user.ProjectRequests.Remove(project);
 
@@ -132,6 +135,11 @@ namespace ia_back.Controllers
                 return NotFound("User not found");
             }
             var project = user.ProjectRequests.FirstOrDefault(p => p.Id == request.ProjectId);
+
+            if (project == null)
+            {
+                return NotFound("Project not found");
+            }
 
             user.ProjectRequests.Remove(project);
 
