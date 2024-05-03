@@ -55,7 +55,7 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'ikanbani'
+          app-name: 'InternetApplications-DevOpsTask'
           slot-name: 'production'
           package: .
           publish-profile: ${{ secrets.AzureAppService_PublishProfile_ffedfa0750ef440b991aad7e4f93a3f9 }}
