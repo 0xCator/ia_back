@@ -1,5 +1,6 @@
 ﻿using ia_back.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace ia_back.Data.Custom_Repositories
 {
@@ -21,6 +22,17 @@ namespace ia_back.Data.Custom_Repositories
                 .Include(u => u.AssignedProjects)
                 .Include(u => u.ProjectRequests)
                 .ToListAsync();
+        }
+
+        public async Task<User> GetByIdIncludeAsync(int id, params Expression<Func<User, object>>[] includes)
+        {
+            IQueryable<User> query = table;
+
+            if (includes != null)
+            {
+                query = includes.Aggregate(query, (current, include) => current.Include(include));
+            }
+            return await query.FirstOrDefaultAsync();
         }
 
         public async Task<User> GetByIdAsync(int id)

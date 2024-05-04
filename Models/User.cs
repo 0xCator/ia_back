@@ -12,7 +12,8 @@ namespace ia_back.Models
         public string Name { get; set; }
         public string Email { get; set; }
         public string Username { get; set; }
-        public string Password { get; set; }
+        public byte[] PasswordHash { get; set; }
+        public byte[] PasswordSalt { get; set; }
 
         //Projects led by the user
         public ICollection<Project> CreatedProjects { get; set; }

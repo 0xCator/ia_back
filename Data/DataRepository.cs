@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using ia_back.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace ia_back.Data
@@ -30,12 +31,7 @@ namespace ia_back.Data
             return await query.ToListAsync();
         }
 
-        public async Task<T> GetByIdAsync(int id)
-        {
-            return await table.FindAsync(id);
-        }
-
-        public async Task<T> GetByIdIncludeAsync(int id, params Expression<Func<T, object>>[] includes)
+        public async Task<IEnumerable<T>> GetAllIncludeCriteriaAsync(Expression<Func<T, bool>> idExpression, params Expression<Func<T, object>>[] includes)
         {
             IQueryable<T> query = table;
 
@@ -43,7 +39,23 @@ namespace ia_back.Data
             {
                 query = includes.Aggregate(query, (current, include) => current.Include(include));
             }
-            return await query.FirstOrDefaultAsync();
+            return await query.Where(idExpression).ToListAsync();
+        }
+
+        public async Task<T> GetByIdAsync(int id)
+        {
+            return await table.FindAsync(id);
+        }
+
+        public async Task<T> GetByIdIncludeAsync(Expression<Func<T, bool>> idExpression, params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = table;
+
+            if (includes != null)
+            {
+                query = includes.Aggregate(query, (current, include) => current.Include(include));
+            }
+            return await query.FirstOrDefaultAsync(idExpression);
         }
 
         public async Task AddAsync(T entity)

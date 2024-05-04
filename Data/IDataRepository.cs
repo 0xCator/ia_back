@@ -6,8 +6,9 @@ namespace ia_back.Data
     {
         Task<IEnumerable<T>> GetAllAsync();
         Task<IEnumerable<T>> GetAllIncludeAsync(params Expression<Func<T, object>>[] includes);
+        Task<IEnumerable<T>> GetAllIncludeCriteriaAsync(Expression<Func<T, bool>> idExpression, params Expression<Func<T, object>>[] includes);
         Task<T> GetByIdAsync(int id);
-        Task<T> GetByIdIncludeAsync(int id, params Expression<Func<T, object>>[] includes);
+        Task<T> GetByIdIncludeAsync(Expression<Func<T, bool>> idExpression, params Expression<Func<T, object>>[] includes);
         Task AddAsync(T entity);
         Task UpdateAsync(T entity);
         Task DeleteAsync(T entity);

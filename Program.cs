@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using ia_back.WebSocket;
+using ia_back.Helpers;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -63,6 +64,8 @@ builder.Services.AddSwaggerGen(opt =>
         }
     });
 });
+
+builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IDataRepository<Project>, DataRepository<Project>>();

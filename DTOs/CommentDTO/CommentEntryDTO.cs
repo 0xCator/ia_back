@@ -9,7 +9,6 @@ namespace ia_back.DTOs.CommentDTO
         public int TaskId { get; set; }
         [Required]
         public int UserId { get; set; }
-        [Required]
         public int? ParentCommentId { get; set; }
     }
 }

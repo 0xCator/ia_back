@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using ia_back.DTOs.ProjectDTO;
 using Microsoft.AspNetCore.Authorization;
 using ia_back.WebSocket;
+using System.Linq.Expressions;
+using AutoMapper;
 
 namespace ia_back.Controllers
 {
@@ -15,15 +17,51 @@ namespace ia_back.Controllers
     {
         private readonly IDataRepository<Project> _projectRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IMapper _mapper;
         private readonly SocketManager _socketManager = new SocketManager();
 
-        public ProjectController(IDataRepository<Project> projectRepository, IUserRepository userRepository)
+        public ProjectController(IMapper mapper, IDataRepository<Project> projectRepository, IUserRepository userRepository)
         {
+            _mapper = mapper;
             _projectRepository = projectRepository;
             _userRepository = userRepository;
         }
 
-        [HttpPut]
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllProjects()
+        {
+            var projects = await _projectRepository.GetAllIncludeAsync(p => p.TeamLeader,
+                                                                       p => p.RequestedDevelopers,
+                                                                       p => p.AssignedDevelopers);
+            if (projects == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(projects);
+        }
+
+
+        [HttpGet("user/{id}")]
+        public async Task<IActionResult> GetProjectsByUser(int id)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(new
+            {
+                CreatedProjects = _mapper.Map<ICollection<Project>, ICollection<ProjectCardDTO>>(user.CreatedProjects),
+                AssignedProjects = _mapper.Map<ICollection<Project>, ICollection<ProjectCardDTO>>(user.AssignedProjects),
+                ProjectRequests = _mapper.Map<ICollection<Project>, ICollection<ProjectCardDTO>>(user.ProjectRequests)
+            });
+        }
+
+
+        [HttpPost]
         public async Task<IActionResult> CreateProject(ProjectEntryDTO projectInfo)
         {
             if (projectInfo == null)
@@ -61,8 +99,9 @@ namespace ia_back.Controllers
             await _projectRepository.AddAsync(project);
             await _projectRepository.Save();
 
-            return Ok();
+            return Ok(new { projectID = project.Id });
         }
+
 
         [HttpDelete("id")]
         public async Task<IActionResult> DeleteProject(int id)
@@ -76,8 +115,9 @@ namespace ia_back.Controllers
             await _projectRepository.DeleteAsync(project);
             await _projectRepository.Save();
 
-            return Ok();
+            return Ok("Project deleted successfully");
         }
+
 
         [HttpPatch("{id}/{newName}")]
         public async Task<IActionResult> UpdateProjectName(int id, string newName)
@@ -95,39 +135,32 @@ namespace ia_back.Controllers
             return Ok();
         }
 
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProject(int id)
         {
-            var project = await _projectRepository.GetByIdIncludeAsync(id,
+            Expression<Func<Project, bool>> criteria = p => p.Id == id;
+            var project = await _projectRepository.GetByIdIncludeAsync(criteria,
                                                                        p => p.TeamLeader,
                                                                        p => p.RequestedDevelopers,
-                                                                       p => p.AssignedDevelopers);
+                                                                       p => p.AssignedDevelopers,
+                                                                       p => p.Tasks);
             if (project == null)
             {
                 return NotFound();
             }
 
-            return Ok(project);
+            ProjectInfoDTO projectInfo = _mapper.Map<Project, ProjectInfoDTO>(project);
+
+            return Ok(projectInfo);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetProjects()
-        {
-            var projects = await _projectRepository.GetAllIncludeAsync(p => p.TeamLeader,
-                                                                       p => p.RequestedDevelopers,
-                                                                       p => p.AssignedDevelopers);
-            if (projects == null)
-            {
-                return NotFound();
-            }
 
-            return Ok(projects);
-        }
-
-        [HttpPost("{id}/sendRequest/{developerName}")]
-        public async Task<IActionResult> AssignDeveloperToProject(int id, string developerName)
+        [HttpPost("{id}/sendRequest/{developerUserName}")]
+        public async Task<IActionResult> AssignDeveloperToProject(int id, string developerUserName)
         {
-            var project = await _projectRepository.GetByIdIncludeAsync(id, 
+            Expression<Func<Project, bool>> criteria = p => p.Id == id;
+            var project = await _projectRepository.GetByIdIncludeAsync(criteria, 
                                                                        p => p.TeamLeader, 
                                                                        p=>p.RequestedDevelopers, 
                                                                        p=>p.AssignedDevelopers);
@@ -135,7 +168,7 @@ namespace ia_back.Controllers
             {
                 return NotFound();
             }
-            var developer = await _userRepository.GetByUsernameAsync(developerName);
+            var developer = await _userRepository.GetByUsernameAsync(developerUserName);
             if (developer == null)
             {
                 return NotFound("Developer doesn't exist");
@@ -143,6 +176,10 @@ namespace ia_back.Controllers
             if (project.RequestedDevelopers.Contains(developer) || project.AssignedDevelopers.Contains(developer))
             {
                 return BadRequest("Developer is already in the project");
+            }
+            if (project.TeamLeaderId == developer.Id)
+            {
+                return BadRequest("Developer is the team leader");
             }
 
             project.RequestedDevelopers.Add(developer);
@@ -154,10 +191,12 @@ namespace ia_back.Controllers
             
         }
 
-        [HttpDelete("{id}/{developerName}")]
-        public async Task<IActionResult> RemoveDeveloperFromProject(int id, string developerName)
+
+        [HttpDelete("{id}/{developerUserName}")]
+        public async Task<IActionResult> RemoveDeveloperFromProject(int id, string developerUserName)
         {
-            var project = await _projectRepository.GetByIdIncludeAsync(id,
+            Expression<Func<Project, bool>> criteria = p => p.Id == id;
+            var project = await _projectRepository.GetByIdIncludeAsync(criteria,
                                                                        p => p.TeamLeader,
                                                                        p => p.RequestedDevelopers,
                                                                        p => p.AssignedDevelopers);
@@ -165,7 +204,7 @@ namespace ia_back.Controllers
             {
                 return NotFound();
             }
-            var developer = await _userRepository.GetByUsernameAsync(developerName);
+            var developer = await _userRepository.GetByUsernameAsync(developerUserName);
             if (developer == null)
             {
                 return NotFound("Developer doesn't exist");
@@ -189,7 +228,6 @@ namespace ia_back.Controllers
 
             return Ok();
         }
-
 
     }
 }
