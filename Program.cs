@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using ia_back.WebSocket;
+using ia_back.Helpers;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -64,10 +65,12 @@ builder.Services.AddSwaggerGen(opt =>
     });
 });
 
-builder.Services.AddScoped<IDataRepository<User>, UserRepository>();
-builder.Services.AddScoped<IDataRepository<Project>, ProjectRepository>();
-builder.Services.AddScoped<IDataRepository<ProjectTask>, TaskRepository>();
-builder.Services.AddScoped<IDataRepository<Comment>, CommentRepository>();
+builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IDataRepository<Project>, DataRepository<Project>>();
+builder.Services.AddScoped<IDataRepository<ProjectTask>, DataRepository<ProjectTask>>();
+builder.Services.AddScoped<IDataRepository<Comment>, DataRepository<Comment>>();
 builder.Services.AddControllersWithViews().AddJsonOptions(options => options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
 builder.Services.AddSingleton<SocketManager>();

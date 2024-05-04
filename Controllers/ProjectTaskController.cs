@@ -5,6 +5,8 @@ using ia_back.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Text;
 using ia_back.WebSocket;
+using System.Linq.Expressions;
+using AutoMapper;
 
 namespace ia_back.Controllers
 {
@@ -15,18 +17,124 @@ namespace ia_back.Controllers
     {
         private readonly IDataRepository<ProjectTask> _projectTaskRepository;
         private readonly IDataRepository<Project> _projectRepository;
+        private readonly IMapper _mapper;
         private readonly SocketManager _socketManager = new SocketManager();
 
 
-        public ProjectTaskController(IDataRepository<ProjectTask> projectTaskRepository,
+        public ProjectTaskController(IMapper mapper, 
+                                    IDataRepository<ProjectTask> projectTaskRepository,
                                     IDataRepository<Project> projectRepository)
         {
+            _mapper = mapper;
             _projectTaskRepository = projectTaskRepository;
             _projectRepository = projectRepository;
         }
 
+
+        [HttpGet("project/{id}")]
+        public async Task<IActionResult> GetProjectTasksByProject(int id)
+        {
+            Expression<Func<Project, bool>> criteria = p => p.Id == id;
+            var project = await _projectRepository.GetByIdIncludeAsync(criteria, 
+                                                                       p => p.Tasks,
+                                                                       p => p.AssignedDevelopers);
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            var projectTasks = _mapper.Map<ICollection<ProjectTask>, ICollection<TaskCardDTO>>(project.Tasks);
+
+            return Ok(projectTasks);
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> CreateProjectTask(TaskEntryDTO projectTaskInfo)
+        {
+            if (projectTaskInfo == null)
+            {
+                return BadRequest();
+            }
+
+            Expression<Func<Project, bool>> criteria = pt => pt.Id == projectTaskInfo.ProjectID;
+            var project = await _projectRepository.GetByIdIncludeAsync(criteria,
+                                                                       p => p.AssignedDevelopers);
+            if (project == null)
+            {
+                return NotFound("Project doesn't exist");
+            }
+
+            var assignedDev = project.AssignedDevelopers.FirstOrDefault(d => d.Id == projectTaskInfo.AssignedDevId);
+            if (assignedDev == null)
+            {
+                return NotFound("Developer doesn't exist");
+            }
+
+            ProjectTask projectTask = new ProjectTask
+            {
+                Name = projectTaskInfo.Name,
+                Description = projectTaskInfo.Description,
+                ProjectId = projectTaskInfo.ProjectID,
+                AssignedDevId = projectTaskInfo.AssignedDevId,
+                Status = ProjectStatus.ToDo,
+                Attachment = ""
+            };
+
+            var assignedDevs = project.AssignedDevelopers;
+
+            await _projectTaskRepository.AddAsync(projectTask);
+            await _projectTaskRepository.Save();
+            await _socketManager.TaskHasUpdate(assignedDevs);
+
+            return Ok("Task created");
+        }
+
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProjectTask(int id)
+        {
+            Expression<Func<ProjectTask, bool>> criteria = pt => pt.Id == id;
+            var projectTask = await _projectTaskRepository.GetByIdIncludeAsync(criteria,
+                                                                               t => t.AssignedDev);
+            if (projectTask == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(_mapper.Map<ProjectTask, TaskInfoDTO>(projectTask));
+        }
+
+
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> UpdateTaskStatus(int id, ProjectStatus newStatus)
+        {
+
+            var projectTask = await _projectTaskRepository.GetByIdAsync(id);
+            if (projectTask == null)
+            {
+                return NotFound();
+            }
+
+            projectTask.Status = newStatus;
+
+            Expression<Func<Project, bool>> criteria = pt => pt.Id == id;
+            var project = await _projectRepository.GetByIdIncludeAsync(criteria,
+                                                                       p => p.AssignedDevelopers,
+                                                                       p => p.TeamLeader);
+            var assignedDevs = project.AssignedDevelopers;
+            assignedDevs.Add(project.TeamLeader);
+
+            await _projectTaskRepository.UpdateAsync(projectTask);
+            await _projectTaskRepository.Save();
+            await _socketManager.TaskHasUpdate(assignedDevs);
+
+            return Ok();
+        }
+
+
         [HttpPost("{id}/UploadAttachment")]
-        public async Task<IActionResult> UploadAttachment(int id, IFormFile file)
+        public async Task<IActionResult> UploadAttachment(int id, [FromForm] IFormFile file)
         {
             var projectTask = await _projectTaskRepository.GetByIdAsync(id);
             if (projectTask == null)
@@ -57,6 +165,7 @@ namespace ia_back.Controllers
 
 
         }
+
 
         [HttpGet("{id}/AttachmentFile")]
         public async Task<IActionResult> GetAttachmentFile(int id){
@@ -107,82 +216,5 @@ namespace ia_back.Controllers
             var fileName = Encoding.UTF8.GetString(Convert.FromBase64String(fileNameBase64));
             return Ok(fileName);
         }
-
-
-
-        [HttpPut]
-        public async Task<IActionResult> CreateProjectTask(TaskEntryDTO projectTaskInfo)
-        {
-            if (projectTaskInfo == null)
-            {
-                return BadRequest();
-            }
-
-            var project = await _projectRepository.GetByIdAsync(projectTaskInfo.ProjectID);
-            if (project == null)
-            {
-                return NotFound("Project doesn't exist");
-            }
-
-            var assignedDev = project.AssignedDevelopers.FirstOrDefault(d => d.Id == projectTaskInfo.AssignedDevId);
-            if (assignedDev == null)
-            {
-                return NotFound("Developer doesn't exist");
-            }
-
-            ProjectTask projectTask = new ProjectTask
-            {
-                Name = projectTaskInfo.Name,
-                Description = projectTaskInfo.Description,
-                ProjectId = projectTaskInfo.ProjectID,
-                AssignedDevId = projectTaskInfo.AssignedDevId,
-                Status = ProjectStatus.ToDo,
-                Attachment = ""
-            };
-
-            var assignedDevs = project.AssignedDevelopers;
-
-            await _projectTaskRepository.AddAsync(projectTask);
-            await _projectTaskRepository.Save();
-            await _socketManager.TaskHasUpdate(assignedDevs);
-
-            return Ok(projectTask);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetProjectTask(int id)
-        {
-            var projectTask = await _projectTaskRepository.GetByIdAsync(id);
-            if (projectTask == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(projectTask);
-        }
-
-        [HttpPatch("{id}")]
-        public async Task<IActionResult> UpdateTaskStatus(int id, ProjectStatus newStatus)
-        {
-
-            var projectTask = await _projectTaskRepository.GetByIdAsync(id);
-            if (projectTask == null)
-            {
-                return NotFound();
-            }
-
-            projectTask.Status = newStatus;
-
-            var project = await _projectRepository.GetByIdAsync(projectTask.ProjectId);
-            var assignedDevs = project.AssignedDevelopers;
-
-            await _projectTaskRepository.UpdateAsync(projectTask);
-            await _projectTaskRepository.Save();
-            await _socketManager.TaskHasUpdate(assignedDevs);
-
-            return Ok();
-        }
-
-        
     }
 }
