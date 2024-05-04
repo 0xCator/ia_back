@@ -28,8 +28,8 @@ namespace ia_back.Helpers
                 .ReverseMap();
 
             CreateMap<Comment, CommentOutputDTO>()
-                .ForMember(dest => dest.CommenterUsername,
-                           opt => opt.MapFrom(src => src.User.Username))
+                .ForMember(dest => dest.CommenterInfo,
+                           opt => opt.MapFrom(src => src.User))
                 .ReverseMap();
         }
     }

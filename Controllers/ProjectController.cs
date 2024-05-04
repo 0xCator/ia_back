@@ -156,7 +156,7 @@ namespace ia_back.Controllers
         }
 
 
-        [HttpPost("{id}/sendRequest/{developerUserName}")]
+        [HttpPost("{id}/developer/{developerUserName}")]
         public async Task<IActionResult> AssignDeveloperToProject(int id, string developerUserName)
         {
             Expression<Func<Project, bool>> criteria = p => p.Id == id;
@@ -192,7 +192,7 @@ namespace ia_back.Controllers
         }
 
 
-        [HttpDelete("{id}/{developerUserName}")]
+        [HttpDelete("{id}/developer/{developerUserName}")]
         public async Task<IActionResult> RemoveDeveloperFromProject(int id, string developerUserName)
         {
             Expression<Func<Project, bool>> criteria = p => p.Id == id;
