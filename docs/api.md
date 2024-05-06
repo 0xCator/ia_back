@@ -183,7 +183,7 @@ Expected response:
 ```
 
 ### Updating a task's status
-#### PATCH ``/api/ProjectTask/[id]``
+#### PATCH ``/api/ProjectTask/[id]/status``
 Used to update a task's status. The status must be one of the following: 0 = To Do, 1 = In Progress, 2 = Done.
 Expected body:
 ```json

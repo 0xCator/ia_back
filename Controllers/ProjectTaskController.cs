@@ -7,6 +7,7 @@ using System.Text;
 using ia_back.WebSocket;
 using System.Linq.Expressions;
 using AutoMapper;
+using ia_back.DTOs.ProjectDTO;
 
 namespace ia_back.Controllers
 {
@@ -106,7 +107,7 @@ namespace ia_back.Controllers
         }
 
 
-        [HttpPatch("{id}")]
+        [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateTaskStatus(int id, ProjectStatus newStatus)
         {
 
@@ -118,7 +119,7 @@ namespace ia_back.Controllers
 
             projectTask.Status = newStatus;
 
-            Expression<Func<Project, bool>> criteria = pt => pt.Id == id;
+            Expression<Func<Project, bool>> criteria = pt => pt.Id == projectTask.ProjectId;
             var project = await _projectRepository.GetByIdIncludeAsync(criteria,
                                                                        p => p.AssignedDevelopers,
                                                                        p => p.TeamLeader);
@@ -130,6 +131,50 @@ namespace ia_back.Controllers
             await _socketManager.TaskHasUpdate(assignedDevs);
 
             return Ok();
+        }
+
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> UpdateTask(int id, TaskEntryDTO projectTaskInfo)
+        {
+            if (projectTaskInfo == null)
+            {
+                return BadRequest();
+            }
+
+            var projectTask = await _projectTaskRepository.GetByIdAsync(id);
+            if (projectTask == null)
+            {
+                return NotFound();
+            }
+
+            Expression<Func<Project, bool>> criteria = pt => pt.Id == projectTask.ProjectId;
+            var project = await _projectRepository.GetByIdIncludeAsync(criteria,
+                                                                       p => p.AssignedDevelopers);
+
+            var assignedDevs = _mapper.Map<Project, ProjectInfoDTO>(project).AssignedDevelopers;
+            if (assignedDevs == null)
+            {
+                return NotFound();
+            }
+
+            if (projectTaskInfo.Name != null) projectTask.Name = projectTaskInfo.Name;
+            if (projectTaskInfo.Description != null) projectTask.Description = projectTaskInfo.Description;
+            if (projectTaskInfo.AssignedDevId != null)
+            {
+                // Check assignedDevs if it contains the new assignedDevId
+                var assignedDev = project.AssignedDevelopers.FirstOrDefault(d => d.Id == projectTaskInfo.AssignedDevId);
+                if (assignedDev == null)
+                {
+                    return NotFound("Developer doesn't exist");
+                }
+                projectTask.AssignedDevId = projectTaskInfo.AssignedDevId;
+            }
+
+            await _projectTaskRepository.UpdateAsync(projectTask);
+            await _projectTaskRepository.Save();
+
+            return Ok(projectTask);
+
         }
 
 
