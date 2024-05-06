@@ -124,7 +124,6 @@ namespace ia_back.Controllers
                                                                        p => p.AssignedDevelopers,
                                                                        p => p.TeamLeader);
             var assignedDevs = project.AssignedDevelopers;
-            assignedDevs.Add(project.TeamLeader);
 
             await _projectTaskRepository.UpdateAsync(projectTask);
             await _projectTaskRepository.Save();
