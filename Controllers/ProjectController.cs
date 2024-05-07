@@ -199,7 +199,8 @@ namespace ia_back.Controllers
             var project = await _projectRepository.GetByIdIncludeAsync(criteria,
                                                                        p => p.TeamLeader,
                                                                        p => p.RequestedDevelopers,
-                                                                       p => p.AssignedDevelopers);
+                                                                       p => p.AssignedDevelopers,
+                                                                       p => p.Tasks);
             if (project == null)
             {
                 return NotFound();
@@ -217,6 +218,14 @@ namespace ia_back.Controllers
             else if (project.AssignedDevelopers.Contains(developer))
             {
                 project.AssignedDevelopers.Remove(developer);
+
+                foreach (var task in project.Tasks)
+                {
+                    if (task.AssignedDevId == developer.Id)
+                    {
+                        project.Tasks.Remove(task);
+                    }
+                }
             }
             else
             {

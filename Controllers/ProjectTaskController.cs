@@ -210,6 +210,21 @@ namespace ia_back.Controllers
 
         }
 
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteProjectTask(int id)
+        {
+            var projectTask = await _projectTaskRepository.GetByIdAsync(id);
+            if (projectTask == null)
+            {
+                return NotFound();
+            }
+
+            await _projectTaskRepository.DeleteAsync(projectTask);
+            await _projectTaskRepository.Save();
+
+            return Ok("Task deleted successfully");
+        }
+
 
         [HttpGet("{id}/AttachmentFile")]
         public async Task<IActionResult> GetAttachmentFile(int id){
