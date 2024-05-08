@@ -10,7 +10,6 @@ using AutoMapper;
 
 namespace ia_back.Controllers
 {
-    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ProjectController : Controller
@@ -28,6 +27,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllProjects()
         {
@@ -43,6 +43,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize]
         [HttpGet("user/{id}")]
         public async Task<IActionResult> GetProjectsByUser(int id)
         {
@@ -61,6 +62,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize(Roles = "TeamLeader")]
         [HttpPost]
         public async Task<IActionResult> CreateProject(ProjectEntryDTO projectInfo)
         {
@@ -103,6 +105,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize(Roles = "TeamLeader")]
         [HttpDelete("id")]
         public async Task<IActionResult> DeleteProject(int id)
         {
@@ -119,6 +122,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize(Roles = "TeamLeader")]
         [HttpPatch("{id}/{newName}")]
         public async Task<IActionResult> UpdateProjectName(int id, string newName)
         {
@@ -136,6 +140,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProject(int id)
         {
@@ -156,6 +161,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize(Roles = "TeamLeader")]
         [HttpPost("{id}/developer/{developerUserName}")]
         public async Task<IActionResult> AssignDeveloperToProject(int id, string developerUserName)
         {
@@ -172,6 +178,10 @@ namespace ia_back.Controllers
             if (developer == null)
             {
                 return NotFound("Developer doesn't exist");
+            }
+            if (developer.Role != Role.Developer)
+            {
+                return BadRequest("Developer is not a developer");
             }
             if (project.RequestedDevelopers.Contains(developer) || project.AssignedDevelopers.Contains(developer))
             {
@@ -192,6 +202,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize(Roles = "TeamLeader")]
         [HttpDelete("{id}/developer/{developerUserName}")]
         public async Task<IActionResult> RemoveDeveloperFromProject(int id, string developerUserName)
         {

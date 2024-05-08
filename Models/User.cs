@@ -11,6 +11,7 @@ namespace ia_back.Models
         [Required]
         public string Name { get; set; }
         public string Email { get; set; }
+        public Role Role { get; set; }
         public string Username { get; set; }
         public byte[] PasswordHash { get; set; }
         public byte[] PasswordSalt { get; set; }
@@ -25,5 +26,11 @@ namespace ia_back.Models
         public ICollection<Project> ProjectRequests { get; set; }
 
 
+    }
+
+    public enum Role
+    {
+        TeamLeader,
+        Developer
     }
 }

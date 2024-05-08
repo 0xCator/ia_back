@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using ia_back.Models;
 
 namespace ia_back.DTOs.Login
 {
@@ -13,5 +14,7 @@ namespace ia_back.DTOs.Login
         public string Username { get; set; }
         [Required]
         public string Password { get; set; }
+        [Required]
+        public Role Role { get; set; }
     }
 }

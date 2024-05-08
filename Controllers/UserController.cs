@@ -70,6 +70,7 @@ namespace ia_back.Controllers
             {
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Role.ToString()),
                 new Claim(JwtRegisteredClaimNames.Aud, _configuration["Jwt:Audience"]),
                 new Claim(JwtRegisteredClaimNames.Iss, _configuration["Jwt:Issuer"])
             };
@@ -114,7 +115,8 @@ namespace ia_back.Controllers
                 Email = register.Email,
                 Username = register.Username,
                 PasswordHash = passwordHash,
-                PasswordSalt = passwordSalt
+                PasswordSalt = passwordSalt,
+                Role = register.Role
             };
 
             await _userRepository.AddAsync(registeringUser);
@@ -133,7 +135,7 @@ namespace ia_back.Controllers
         }
 
 
-        [Authorize]
+        [Authorize(Roles = "Developer")]
         [HttpPost("acceptRequest")]
         public async Task<IActionResult> AcceptRequest(RequestDTO request)
         {
@@ -158,7 +160,7 @@ namespace ia_back.Controllers
         }
 
 
-        [Authorize]
+        [Authorize(Roles = "Developer")]
         [HttpPost("rejectRequest")]
         public async Task<IActionResult> RejectRequest(RequestDTO request)
         {

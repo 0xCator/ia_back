@@ -11,7 +11,6 @@ using ia_back.DTOs.ProjectDTO;
 
 namespace ia_back.Controllers
 {
-    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ProjectTaskController : Controller
@@ -32,6 +31,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize]
         [HttpGet("project/{id}")]
         public async Task<IActionResult> GetProjectTasksByProject(int id)
         {
@@ -50,6 +50,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize(Roles = "TeamLeader")]
         [HttpPost]
         public async Task<IActionResult> CreateProjectTask(TaskEntryDTO projectTaskInfo)
         {
@@ -92,6 +93,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProjectTask(int id)
         {
@@ -107,6 +109,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize(Roles = "Developer")]
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateTaskStatus(int id, ProjectStatus newStatus)
         {
@@ -132,6 +135,8 @@ namespace ia_back.Controllers
             return Ok();
         }
 
+
+        [Authorize(Roles = "TeamLeader")]
         [HttpPatch("{id}")]
         public async Task<IActionResult> UpdateTask(int id, TaskEntryDTO projectTaskInfo)
         {
@@ -177,6 +182,24 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize(Roles = "TeamLeader")]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteProjectTask(int id)
+        {
+            var projectTask = await _projectTaskRepository.GetByIdAsync(id);
+            if (projectTask == null)
+            {
+                return NotFound();
+            }
+
+            await _projectTaskRepository.DeleteAsync(projectTask);
+            await _projectTaskRepository.Save();
+
+            return Ok("Task deleted successfully");
+        }
+
+
+        [Authorize(Roles = "Developer")]
         [HttpPost("{id}/UploadAttachment")]
         public async Task<IActionResult> UploadAttachment(int id, [FromForm] IFormFile file)
         {
@@ -210,22 +233,8 @@ namespace ia_back.Controllers
 
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProjectTask(int id)
-        {
-            var projectTask = await _projectTaskRepository.GetByIdAsync(id);
-            if (projectTask == null)
-            {
-                return NotFound();
-            }
 
-            await _projectTaskRepository.DeleteAsync(projectTask);
-            await _projectTaskRepository.Save();
-
-            return Ok("Task deleted successfully");
-        }
-
-
+        [Authorize]
         [HttpGet("{id}/AttachmentFile")]
         public async Task<IActionResult> GetAttachmentFile(int id){
             var projectTask = await _projectTaskRepository.GetByIdAsync(id);
@@ -257,6 +266,7 @@ namespace ia_back.Controllers
         }
 
 
+        [Authorize]
         [HttpGet("{id}/AttachmentName")]
         public async Task<IActionResult> GetAttachmentName(int id){
             var projectTask = await _projectTaskRepository.GetByIdAsync(id);
