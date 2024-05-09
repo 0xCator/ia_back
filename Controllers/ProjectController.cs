@@ -106,7 +106,7 @@ namespace ia_back.Controllers
 
 
         [Authorize(Roles = "TeamLeader")]
-        [HttpDelete("id")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProject(int id)
         {
             var project = await _projectRepository.GetByIdAsync(id);
