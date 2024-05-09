@@ -18,7 +18,7 @@ namespace ia_back.Controllers
         private readonly IDataRepository<ProjectTask> _projectTaskRepository;
         private readonly IDataRepository<Project> _projectRepository;
         private readonly IMapper _mapper;
-        private readonly SocketManager _socketManager = new SocketManager();
+        private readonly SocketManager _socketManager = SocketManager.Instance;
 
 
         public ProjectTaskController(IMapper mapper, 
