@@ -131,6 +131,10 @@ namespace ia_back.Controllers
             await _projectTaskRepository.UpdateAsync(projectTask);
             await _projectTaskRepository.Save();
             await _socketManager.TaskHasUpdate(assignedDevs);
+            List<User> lead = new List<User>();
+            lead.Add(project.TeamLeader);
+            await _socketManager.TaskHasUpdate(lead);
+
 
             return Ok();
         }
