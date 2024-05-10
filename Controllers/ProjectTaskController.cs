@@ -180,6 +180,8 @@ namespace ia_back.Controllers
 
             await _projectTaskRepository.UpdateAsync(projectTask);
             await _projectTaskRepository.Save();
+            await _socketManager.TaskHasUpdate(project.AssignedDevelopers);
+
 
             return Ok(projectTask);
 
@@ -196,8 +198,13 @@ namespace ia_back.Controllers
                 return NotFound();
             }
 
+            Expression<Func<Project, bool>> criteria = pt => pt.Id == projectTask.ProjectId;
+            var project = await _projectRepository.GetByIdIncludeAsync(criteria,
+                                                                       p => p.AssignedDevelopers);
+
             await _projectTaskRepository.DeleteAsync(projectTask);
             await _projectTaskRepository.Save();
+            await _socketManager.TaskHasUpdate(project.AssignedDevelopers);
 
             return Ok("Task deleted successfully");
         }
