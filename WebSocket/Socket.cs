@@ -12,19 +12,19 @@ namespace ia_back.WebSocket
         public System.Net.WebSockets.WebSocket socket;
         public int id;
 
-        public Socket(int id)
+        public Socket(int id, System.Net.WebSockets.WebSocket socket)
         {
             this.id = id;
+            this.socket = socket;
             Console.WriteLine("Socket started with id: " + id);
         }
 
-        public async Task Start(System.Net.WebSockets.WebSocket socket)
+        public async Task Start()
         {
-            this.socket = socket;
             var buffer = new byte[1024 * 4];
             try
             {
-                while (socket.State == WebSocketState.Open)
+                while (this.socket.State == WebSocketState.Open)
                 {
                     WebSocketReceiveResult result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                     if (result.MessageType == WebSocketMessageType.Close)
@@ -36,12 +36,14 @@ namespace ia_back.WebSocket
                     else
                     {
                         var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                        Array.Clear(buffer, 0, buffer.Length);
                     }
                 }
             }
             catch (WebSocketException)
             {
-            
+                SocketManager.Instance.RemoveSocket(this);
+                Console.WriteLine("Socket closed with id: " + id);
             }
         }
     }

@@ -70,9 +70,19 @@ namespace ia_back.WebSocket
             {
                 foreach (var user in users)
                 {
-                    if (socket.id == user.Id)
+                    if(socket.socket.State == WebSocketState.Open)
                     {
-                        await socket.socket.SendAsync(new ArraySegment<byte>(message, 0, message.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+                        if (socket.id == user.Id)
+                        {
+                            try
+                            {
+                                await socket.socket.SendAsync(new ArraySegment<byte>(message, 0, message.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+                            }
+                            catch (WebSocketException ex)
+                            {
+                                Console.WriteLine(ex.Message);
+                            }
+                        }
                     }
                 }
             }

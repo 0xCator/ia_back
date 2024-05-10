@@ -86,9 +86,9 @@ app.Map("/ws", async context =>
         var userID = context.Request.Query["id"];
         var webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
-        Socket socket = new Socket(int.Parse(userID));
+        Socket socket = new Socket(int.Parse(userID), webSocket);
         SocketManager.Instance.AddSocket(socket);
-        await socket.Start(webSocket);
+        await socket.Start();
     }
     else
     {
