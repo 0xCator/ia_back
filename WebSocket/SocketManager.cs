@@ -48,6 +48,21 @@ namespace ia_back.WebSocket
             }
         }
 
+        public async Task ProjectHasUpdate(ICollection<User> users)
+        {
+            var message = Encoding.UTF8.GetBytes("Project has been updated");
+            foreach (var socket in _sockets)
+            {
+                foreach (var user in users)
+                {
+                    if (socket.id == user.Id)
+                    {
+                        await socket.socket.SendAsync(new ArraySegment<byte>(message, 0, message.Length), WebSocketMessageType.Text, true, CancellationToken.None);
+                    }
+                }
+            }
+        }
+
         public async Task TaskHasUpdate(ICollection<User> users)
         {
             var message = Encoding.UTF8.GetBytes("Task has been updated");

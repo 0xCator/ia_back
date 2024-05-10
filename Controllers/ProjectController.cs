@@ -109,14 +109,23 @@ namespace ia_back.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProject(int id)
         {
-            var project = await _projectRepository.GetByIdAsync(id);
+            Expression<Func<Project, bool>> criteria = p => p.Id == id;
+            var project = await _projectRepository.GetByIdIncludeAsync(criteria,
+                                                                       p => p.RequestedDevelopers,
+                                                                       p => p.AssignedDevelopers);
             if (project == null)
             {
                 return NotFound();
             }
 
+            var requestedDevelopers = project.RequestedDevelopers;
+            var assignedDevelopers = project.AssignedDevelopers;
+
             await _projectRepository.DeleteAsync(project);
             await _projectRepository.Save();
+
+            await _socketManager.ProjectHasUpdate(requestedDevelopers);
+            await _socketManager.ProjectHasUpdate(assignedDevelopers);
 
             return Ok("Project deleted successfully");
         }
@@ -126,15 +135,24 @@ namespace ia_back.Controllers
         [HttpPatch("{id}/{newName}")]
         public async Task<IActionResult> UpdateProjectName(int id, string newName)
         {
-            var project = await _projectRepository.GetByIdAsync(id);
+            Expression<Func<Project, bool>> criteria = p => p.Id == id;
+            var project = await _projectRepository.GetByIdIncludeAsync(criteria,
+                                                                       p => p.RequestedDevelopers,
+                                                                       p => p.AssignedDevelopers);
             if (project == null)
             {
                 return NotFound();
             }
 
+            var requestedDevelopers = project.RequestedDevelopers;
+            var assignedDevelopers = project.AssignedDevelopers;
+
             project.Name = newName;
             await _projectRepository.UpdateAsync(project);
             await _projectRepository.Save();
+
+            await _socketManager.ProjectHasUpdate(requestedDevelopers);
+            await _socketManager.ProjectHasUpdate(assignedDevelopers);
 
             return Ok();
         }
